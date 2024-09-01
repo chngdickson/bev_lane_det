@@ -1,18 +1,24 @@
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+import torch.nn.functional
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 import numpy as np
 from loader.bev_road.openlane_data import OpenLane_dataset_with_offset,OpenLane_dataset_with_offset_val
 from models.model.single_camera_bev import BEV_LaneDet
+import os
 
 ''' data split '''
-train_gt_paths = '/dataset/openlane/lane3d_1000/training'
-train_image_paths = '/dataset/openlane/images/training'
-val_gt_paths = '/dataset/openlane/lane3d_1000/validation'
-val_image_paths = '/dataset/openlane/images/validation'
+prev_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+train_gt_paths = os.path.join(prev_dir, 'dataset/openlane/lane3d_1000/training')
+train_image_paths = os.path.join(prev_dir,'dataset/openlane/images/training')
+val_gt_paths = os.path.join(prev_dir,'dataset/openlane/lane3d_1000/validation')
+val_image_paths = os.path.join(prev_dir,'dataset/openlane/images/validation')
+model_save_path = os.path.join(prev_dir, "dataset/model/openlane")
 
-model_save_path = "/dataset/model/openlane"
+all_paths = [train_gt_paths, train_image_paths, val_gt_paths, val_image_paths, model_save_path]
+for path in all_paths:
+    assert os.path.exists(path), f"{path} not exist"
 
 input_shape = (576,1024)
 output_2d_shape = (144,256)
@@ -24,8 +30,8 @@ meter_per_pixel = 0.5 # grid size
 bev_shape = (int((x_range[1] - x_range[0]) / meter_per_pixel),int((y_range[1] - y_range[0]) / meter_per_pixel))
 
 loader_args = dict(
-    batch_size=64,
-    num_workers=12,
+    batch_size=16,
+    num_workers=0,
     shuffle=True
 )
 

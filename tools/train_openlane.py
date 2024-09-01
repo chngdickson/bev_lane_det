@@ -1,5 +1,11 @@
 import sys
-sys.path.append('/mnt/ve_perception/wangruihao/code/BEV-LaneDet')
+try:
+    import os
+    prev_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    print(prev_dir)
+except:
+    print("error")
+sys.path.append(prev_dir)# 添加模块搜索路径
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
@@ -28,6 +34,7 @@ class Combine_Model_and_Loss(torch.nn.Module):
         res = self.model(inputs)
         pred, emb, offset_y, z = res[0]
         pred_2d, emb_2d = res[1]
+        # print(pred.shape, emb.shape, offset_y.shape, z.shape)
         if train:
             ## 3d
             loss_seg = self.bce(pred, gt_seg) + self.iou_loss(torch.sigmoid(pred), gt_seg)
@@ -93,7 +100,8 @@ def train_epoch(model, dataset, optimizer, configs, epoch):
 
 
 def worker_function(config_file, gpu_id, checkpoint_path=None):
-    print('use gpu ids is'+','.join([str(i) for i in gpu_id]))
+    # print('use gpu ids is'+','.join([str(i) for i in gpu_id]))
+    
     configs = load_config_module(config_file)
 
     ''' models and optimizer '''
@@ -138,4 +146,4 @@ def worker_function(config_file, gpu_id, checkpoint_path=None):
 if __name__ == '__main__':
     import warnings
     warnings.filterwarnings("ignore")
-    worker_function('./openlane_config.py', gpu_id=[4, 5, 6, 7])
+    worker_function('./tools/openlane_config.py', gpu_id=0)

@@ -2,8 +2,13 @@ import numpy as np
 import copy
 import time
 import sys
-sys.path.append('/workspace/bev_lane_det')
-import os
+try:
+    import os
+    prev_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    print(prev_dir)
+except:
+    print("error")
+sys.path.append(prev_dir)# 添加模块搜索路径
 gpu_id = [0]
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = ','.join([str(i) for i in gpu_id])
@@ -19,10 +24,10 @@ from models.util.post_process import bev_instance2points_with_offset_z
 from utils.util_val.val_offical import LaneEval
 from models.model.single_camera_bev import *
 
-model_path = '/dataset/model/20220814/ep008.pth' #model path of verification
+model_path = os.path.join(prev_dir, 'dataset/model/openlane/latest.pth') #model path of verification
 
 ''' parameter from config '''
-config_file = './openlane_config.py'
+config_file = './tools/openlane_config.py'
 configs = load_config_module(config_file)
 gt_paths = configs.val_gt_paths
 image_paths = configs.val_image_paths
@@ -36,7 +41,7 @@ post_conf = -0.7 # Minimum confidence on the segmentation map for clustering
 post_emb_margin = 6.0 # embeding margin of different clusters
 post_min_cluster_size = 15 # The minimum number of points in a cluster
 
-tmp_save_path = '/dataset/tmp/tmp_openlane' #tmp path for save intermediate result
+tmp_save_path = 'dataset/tmp/tmp_openlane' #tmp path for save intermediate result
 
 
 class PostProcessDataset(Dataset):
@@ -117,7 +122,7 @@ def val():
     model = configs.model()
     model = load_model(model,
                        model_path)
-    print(model_path)
+
     model.cuda()
     model.eval()
     val_dataset = configs.val_dataset()
@@ -127,9 +132,10 @@ def val():
                               shuffle=False)
     ''' Make temporary storage files according to time '''
     time1 = int(time.time()) # 
-    np_save_path = os.path.join(tmp_save_path, str(time1) + '_np')
+    np_save_path = os.path.join(prev_dir,tmp_save_path, str(time1) + '_np')
+
     os.makedirs(np_save_path, exist_ok=True)
-    res_save_path = os.path.join(tmp_save_path, str(time1) + '_result')
+    res_save_path = os.path.join(prev_dir,tmp_save_path, str(time1) + '_result')
     os.makedirs(res_save_path, exist_ok=True)
     ''' get model result and save'''
     for item in tqdm(val_loader):
@@ -148,6 +154,7 @@ def val():
                 save_path = os.path.join(np_save_path,
                                          bn_name[0][idx] + '__' + bn_name[1][idx].replace('json', 'np'))
                 np.save(save_path, tmp_res_for_save)
+        
     ''' get postprocess result and save '''
     postprocess = PostProcessDataset(np_save_path, res_save_path, gt_paths)
     postprocess_loader = DataLoader(dataset=postprocess,

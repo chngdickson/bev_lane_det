@@ -1,5 +1,11 @@
 import sys
-sys.path.append('/workspace/bev_lane_det')# 添加模块搜索路径
+try:
+    import os
+    prev_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    print(prev_dir)
+except:
+    print("error")
+sys.path.append(prev_dir)# 添加模块搜索路径
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR # 导入余弦退火学习率调度器
 from torch.utils.data import DataLoader  # 导入数据加载器

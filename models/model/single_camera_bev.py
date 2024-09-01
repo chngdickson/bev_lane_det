@@ -254,11 +254,13 @@ class FCTransform_(nn.Module):
             ))
 
     def forward(self, x):
-        x = x.view(list(x.size()[:2]) + [self.image_featmap_size[1] * self.image_featmap_size[2], ])  # 这个 B,V,C,H*W
+        x = x.view(list(x.size()[:2]) + [self.image_featmap_size[1] * self.image_featmap_size[2]])  # 这个 B,V,C,H*W
+        print("pre Transformer",x.shape)
         bev_view = self.fc_transform(x)  # 拿出一个视角
         bev_view = bev_view.view(list(bev_view.size()[:2]) + [self.space_featmap_size[1], self.space_featmap_size[2]])
         bev_view = self.conv1(bev_view)
         bev_view = self.residual(bev_view)
+        print("post Transformer",bev_view.shape)
         return bev_view
 
 
@@ -312,8 +314,11 @@ class BEV_LaneDet(nn.Module):  # BEV-LaneDet
             self.lane_head_2d = LaneHeadResidual_Instance(output_2d_shape, input_channel=512)
 
     def forward(self, img):
+        print("img",img.shape)
         img_s32 = self.bb(img)
         img_s64 = self.down(img_s32)
+        
+        print("im32",img_s32.shape)
         bev_32 = self.s32transformer(img_s32)
         bev_64 = self.s64transformer(img_s64)
         bev = torch.cat([bev_64, bev_32], dim=1)
